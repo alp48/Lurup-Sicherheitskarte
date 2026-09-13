@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Lurup Sicherheitskarte</title>
+
+  <!-- Leaflet Kartenbibliothek -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f5f6f7;
+      color: #1f2933;
+    }
+
+    header {
+      background: #ffffff;
+      padding: 18px 16px 14px;
+      border-bottom: 1px solid #ddd;
+    }
+
+    .header-inner {
+      max-width: 900px;
+      margin: auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      margin-top: 7px;
+      color: #555;
+      font-size: 16px;
+      line-height: 1.4;
+    }
+
+    main {
+      max-width: 900px;
+      margin: auto;
+      padding: 14px;
+    }
+
+    .info-box {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+    }
+
+    .info-box strong {
+      display: block;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    #map {
+      width: 100%;
+      height: 430px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+      margin-bottom: 16px;
+    }
+
+    .form-card {
+      background: white;
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.08);
+    }
+
+    .form-card.hidden {
+      display: none;
+    }
+
+    h2 {
+      font-size: 21px;
+      margin-top: 0;
+    }
+
+    .selected-location {
+      background: #eef5ff;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 15px;
+    }
+
+    .reason {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 8px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      font-size: 17px;
+    }
+
+    .reason input {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+    }
+
+    label.title {
+      display: block;
+      font-weight: bold;
+      font-size: 18px;
+      margin: 20px 0 8px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #bbb;
+      border-radius: 8px;
+      resize: vertical;
+      font-family: inherit;
+    }
+
+    .hint {
+      font-size: 14px;
+      color: #666;
+      margin-top: 6px;
+    }
+
+    button {
+      width: 100%;
+      border: none;
+      border-radius: 9px;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 18px;
+    }
+
+    .submit-button {
+      background: #1769aa;
+      color: white;
+    }
+
+    .submit-button:hover {
+      background: #125486;
+    }
+
+    .reset-button {
+      background: #e8eaed;
+      color: #222;
+    }
+
+    .success {
+      display: none;
+      background: #e9f7ef;
+      border: 1px solid #a7d7b9;
+      padding: 18px;
+      border-radius: 10px;
+      margin-top: 15px;
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .emergency {
+      background: #fff4f4;
+      border: 1px solid #e2b7b7;
+      border-radius: 10px;
+      padding: 13px;
+      margin-top: 15px;
+      font-size: 14px;
+    }
+
+    footer {
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      padding: 25px 15px;
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 22px;
+      }
+
+      #map {
+        height: 390px;
+      }
+
+      main {
+        padding: 10px;
+      }
+
+      .form-card,
+      .info-box {
+        border-radius: 10px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>🛡️ Lurup Sicherheitskarte</h1>
+    <div class="subtitle">
+      Wo fühlst du dich in Lurup unsicher oder unwohl?
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="info-box">
+    <strong>📍 Ort auswählen</strong>
+    Tippe auf der Karte auf den Ort, an dem du dich unsicher fühlst.
+  </div>
+
+  <div id="map"></div>
+
+  <div id="formCard" class="form-card hidden">
+
+    <h2>Was macht diesen Ort unsicher?</h2>
+
+    <div id="selectedLocation" class="selected-location">
+      Ort wurde ausgewählt.
+    </div>
+
+    <label class="reason">
+      <input type="checkbox" value="Dunkelheit">
+      <span>🌙 Dunkelheit</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Schlechte Beleuchtung">
+      <span>💡 Schlechte Beleuchtung</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Unübersichtlicher Ort">
+      <span>👀 Unübersichtlicher Ort</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Belästigung">
+      <span>🗣️ Belästigung</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Angst vor Gewalt">
+      <span>⚠️ Angst vor Gewalt</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Unsicherer Weg">
+      <span>🚶 Unsicherer Weg</span>
+    </label>
+
+    <label class="reason">
+      <input type="checkbox" value="Sonstiges">
+      <span>➕ Sonstiges</span>
+    </label>
+
+    <label class="title" for="comment">
+      Was möchtest du dazu sagen? (optional)
+    </label>
+
+    <textarea
+      id="comment"
+      maxlength="500"
+      placeholder="Zum Beispiel: Abends ist es hier sehr dunkel."
+    ></textarea>
+
+    <div class="hint">
+      Bitte keine Namen, Telefonnummern oder persönlichen Daten eingeben.
+    </div>
+
+    <button class="submit-button" onclick="submitReport()">
+      Meldung senden
+    </button>
+
+    <button class="reset-button" onclick="resetForm()">
+      Anderen Ort auswählen
+    </button>
+
+    <div id="successMessage" class="success">
+      <strong>Vielen Dank!</strong><br>
+      Deine Meldung wurde aufgenommen.
+      <br><br>
+      Die Meldung wird zunächst geprüft und nicht automatisch öffentlich angezeigt.
+    </div>
+
+    <div class="emergency">
+      <strong>Bei akuter Gefahr:</strong><br>
+      Bitte wende dich an die Polizei unter <strong>110</strong>.
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  Lurup Sicherheitskarte · Ein Projekt zur Sammlung subjektiver Sicherheitsempfindungen
+</footer>
+
+
+<!-- Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+  /*
+   * Karte von Lurup
+   *
+   * Diese Koordinaten dienen zunächst als Startpunkt.
+   * Den sichtbaren Bereich können wir später noch genauer anpassen.
+   */
+
+  const map = L.map("map").setView([53.5925, 9.8735], 14);
+
+  /*
+   * OpenStreetMap-Karte
+   */
+
+  L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap-Mitwirkende'
+    }
+  ).addTo(map);
+
+
+  let selectedMarker = null;
+  let selectedLat = null;
+  let selectedLng = null;
+
+
+  /*
+   * Wenn jemand auf die Karte tippt
+   */
+
+  map.on("click", function(e) {
+
+    selectedLat = e.latlng.lat;
+    selectedLng = e.latlng.lng;
+
+    /*
+     * Alten Marker entfernen
+     */
+
+    if (selectedMarker !== null) {
+      map.removeLayer(selectedMarker);
+    }
+
+    /*
+     * Neuen Marker setzen
+     */
+
+    selectedMarker = L.marker([
+      selectedLat,
+      selectedLng
+    ]).addTo(map);
+
+    selectedMarker.bindPopup(
+      "Ausgewählter Ort"
+    ).openPopup();
+
+
+    /*
+     * Formular anzeigen
+     */
+
+    document
+      .getElementById("formCard")
+      .classList.remove("hidden");
+
+    document
+      .getElementById("selectedLocation")
+      .innerHTML =
+      "📍 Ort ausgewählt. Du kannst jetzt den Grund angeben.";
+
+    /*
+     * Zum Formular scrollen
+     */
+
+    setTimeout(function() {
+      document
+        .getElementById("formCard")
+        .scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+    }, 200);
+
+  });
+
+
+  /*
+   * Meldung absenden
+   */
+
+  function submitReport() {
+
+    const checkboxes =
+      document.querySelectorAll(
+        '.reason input[type="checkbox"]:checked'
+      );
+
+    const reasons = [];
+
+    checkboxes.forEach(function(checkbox) {
+      reasons.push(checkbox.value);
+    });
+
+
+    /*
+     * Mindestens einen Grund verlangen
+     */
+
+    if (reasons.length === 0) {
+
+      alert(
+        "Bitte wähle mindestens einen Grund aus."
+      );
+
+      return;
+    }
+
+
+    const comment =
+      document
+        .getElementById("comment")
+        .value
+        .trim();
+
+
+    /*
+     * Momentan speichern wir die Meldung
+     * testweise im Browser.
+     *
+     * Später ersetzen wir diesen Teil
+     * durch Supabase.
+     */
+
+    const report = {
+
+      latitude: selectedLat,
+
+      longitude: selectedLng,
+
+      reasons: reasons,
+
+      comment: comment,
+
+      createdAt:
+        new Date().toISOString(),
+
+      status: "pending"
+
+    };
+
+
+    /*
+     * Bereits vorhandene Testmeldungen laden
+     */
+
+    let reports =
+      JSON.parse(
+        localStorage.getItem(
+          "lurupReports"
+        ) || "[]"
+      );
+
+
+    reports.push(report);
+
+
+    localStorage.setItem(
+      "lurupReports",
+      JSON.stringify(reports)
+    );
+
+
+    /*
+     * Erfolg anzeigen
+     */
+
+    document
+      .getElementById("successMessage")
+      .style.display = "block";
+
+
+    /*
+     * Formular deaktivieren
+     */
+
+    document
+      .querySelector(".submit-button")
+      .disabled = true;
+
+  }
+
+
+  /*
+   * Formular zurücksetzen
+   */
+
+  function resetForm() {
+
+    document
+      .getElementById("formCard")
+      .classList.add("hidden");
+
+
+    document
+      .getElementById("successMessage")
+      .style.display = "none";
+
+
+    document
+      .getElementById("comment")
+      .value = "";
+
+
+    document
+      .querySelectorAll(
+        '.reason input[type="checkbox"]'
+      )
+      .forEach(function(checkbox) {
+        checkbox.checked = false;
+      });
+
+
+    const submitButton =
+      document.querySelector(
+        ".submit-button"
+      );
+
+    submitButton.disabled = false;
+
+
+    if (selectedMarker !== null) {
+
+      map.removeLayer(
+        selectedMarker
+      );
+
+      selectedMarker = null;
+
+    }
+
+
+    selectedLat = null;
+    selectedLng = null;
+
+  }
+
+</script>
+
+</body>
+</html>
