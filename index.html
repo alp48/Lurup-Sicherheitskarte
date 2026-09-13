@@ -351,6 +351,49 @@
   let selectedLat = null;
   let selectedLng = null;
 
+    /*
+   * Freigegebene Meldungen aus Supabase laden
+   */
+
+  const SUPABASE_URL = "https://otiwdiwsgdxbtguyblso.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_ae3zVc4aH5VukTcKch7taQ_aje87ZUP";
+
+  fetch(`${SUPABASE_URL}/rest/v1/approved_reports`)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Freigegebene Meldungen konnten nicht geladen werden.");
+      }
+
+      return response.json();
+    })
+    .then(reports => {
+
+      reports.forEach(report => {
+
+        const marker = L.circleMarker(
+          [report.latitude, report.longitude],
+          {
+            radius: 9,
+            weight: 2,
+            fillOpacity: 0.7
+          }
+        ).addTo(map);
+
+        const reasons = report.reasons.join(", ");
+
+        marker.bindPopup(
+          `<strong>Gemeldeter unsicherer Ort</strong><br><br>
+           <strong>Genannte Gründe:</strong><br>
+           ${reasons}`
+        );
+
+      });
+
+    })
+    .catch(error => {
+      console.error("Fehler beim Laden der Meldungen:", error);
+    });
+
 
   /*
    * Wenn jemand auf die Karte tippt
