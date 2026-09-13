@@ -460,62 +460,46 @@
      */
 
     const report = {
+  latitude: selectedLat,
+  longitude: selectedLng,
+  reasons: reasons,
+  comment: comment,
+  status: "pending"
+};
 
-      latitude: selectedLat,
+const SUPABASE_URL = "https://otiwdiwsgdxbtguyblso.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ae3zVc4aH5VukTcKch7taQ_aje87ZUP";
 
-      longitude: selectedLng,
-
-      reasons: reasons,
-
-      comment: comment,
-
-      createdAt:
-        new Date().toISOString(),
-
-      status: "pending"
-
-    };
-
-
-    /*
-     * Bereits vorhandene Testmeldungen laden
-     */
-
-    let reports =
-      JSON.parse(
-        localStorage.getItem(
-          "lurupReports"
-        ) || "[]"
-      );
-
-
-    reports.push(report);
-
-
-    localStorage.setItem(
-      "lurupReports",
-      JSON.stringify(reports)
-    );
-
-
-    /*
-     * Erfolg anzeigen
-     */
-
-    document
-      .getElementById("successMessage")
-      .style.display = "block";
-
-
-    /*
-     * Formular deaktivieren
-     */
-
-    document
-      .querySelector(".submit-button")
-      .disabled = true;
-
+fetch(`${SUPABASE_URL}/rest/v1/reports`, {
+  method: "POST",
+  headers: {
+    "apikey": SUPABASE_KEY,
+    "Authorization": `Bearer ${SUPABASE_KEY}`,
+    "Content-Type": "application/json",
+    "Prefer": "return=minimal"
+  },
+  body: JSON.stringify(report)
+})
+.then(response => {
+  if (!response.ok) {
+    throw new Error("Fehler beim Speichern");
   }
+
+  document
+    .getElementById("successMessage")
+    .style.display = "block";
+
+  document
+    .querySelector(".submit-button")
+    .disabled = true;
+})
+.catch(error => {
+  console.error(error);
+
+  alert(
+    "Die Meldung konnte leider nicht übermittelt werden. Bitte versuche es später erneut."
+  );
+});
 
 
   /*
